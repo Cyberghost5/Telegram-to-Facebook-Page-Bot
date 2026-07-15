@@ -10,8 +10,10 @@ __pycache__/
 # Application data & databases
 truck_forwarder.db
 *.db
+*.db-journal
 truck_forwarder_session.session
 *.session
+*.session-journal
 
 # Logs
 truck_forwarder.log

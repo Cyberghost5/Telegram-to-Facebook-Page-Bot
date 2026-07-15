@@ -17,6 +17,9 @@ Rules:
 - Use simple section headers like "🚛 Truck Details" and "💰 Price" where relevant.
 - Keep the tone professional but warm — this is a marketplace post, not a legal document.
 - Do NOT invent specs that are not in the original text.
+- Do NOT apply text syling such as bold or italics.
+- Do NOT include emojis.
+- Always change the brand name to "Truck Sales USA" if you see any other brand name.
 - Do NOT include any contact information — that will be appended separately.
 - End your composed post ONLY with the truck details and a single blank line.
   Do not add any sign-off or CTA — those are added outside.
@@ -49,10 +52,13 @@ def compose_facebook_post(raw_caption: str) -> str:
         body = message.content[0].text.strip()
 
     # Append your contact details + CTA
+    clean_wa = "".join(c for c in WHATSAPP_NUMBER if c.isdigit())
+    clean_tg = TELEGRAM_USERNAME.lstrip("@")
+
     contact_block = (
         "\n\n📞 Reach out to us to get this truck or learn more:\n"
-        f"  • WhatsApp: {WHATSAPP_NUMBER}\n"
-        f"  • Telegram: {TELEGRAM_USERNAME}"
+        f"  • WhatsApp: https://wa.me/{clean_wa}\n"
+        f"  • Telegram: https://t.me/{clean_tg}"
     )
 
     full_post = body + contact_block
