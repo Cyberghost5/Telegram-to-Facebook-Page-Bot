@@ -50,8 +50,11 @@ async def handle_group(messages: list[Message]):
             path = await msg.download(
                 file_name=f"{DOWNLOADS_DIR}/{gid}_{msg.id}.jpg"
             )
-            image_paths.append(path)
-            logger.info(f"Downloaded: {path}")
+            if path:
+                image_paths.append(path)
+                logger.info(f"Downloaded: {path}")
+            else:
+                logger.error(f"Failed to download photo from message {msg.id}: download returned None")
         except Exception as e:
             logger.error(f"Failed to download photo from message {msg.id}: {e}")
 
@@ -60,11 +63,11 @@ async def handle_group(messages: list[Message]):
         return
 
     try:
-        # Compose post text via Claude
-        post_text = compose_facebook_post(raw_caption)
+        # Compose post text via Claude (offloaded to thread to avoid blocking event loop)
+        post_text = await asyncio.to_thread(compose_facebook_post, raw_caption)
 
-        # Publish to Facebook
-        post_id = publish_post(image_paths, post_text)
+        # Publish to Facebook (offloaded to thread to avoid blocking event loop)
+        post_id = await asyncio.to_thread(publish_post, image_paths, post_text)
         logger.info(f"Successfully published to Facebook. Post ID: {post_id}")
 
         # Mark as processed to prevent duplicates
@@ -100,13 +103,19 @@ async def handle_single_photo(message: Message):
         path = await message.download(
             file_name=f"{DOWNLOADS_DIR}/{message.id}.jpg"
         )
+        if not path:
+            logger.error(f"Failed to download photo from message {message.id}: download returned None")
+            return
     except Exception as e:
         logger.error(f"Failed to download photo from message {message.id}: {e}")
         return
 
     try:
-        post_text = compose_facebook_post(raw_caption)
-        post_id = publish_post([path], post_text)
+        # Compose post text via Claude (offloaded to thread to avoid blocking event loop)
+        post_text = await asyncio.to_thread(compose_facebook_post, raw_caption)
+        
+        # Publish to Facebook (offloaded to thread to avoid blocking event loop)
+        post_id = await asyncio.to_thread(publish_post, [path], post_text)
         logger.info(f"Successfully published to Facebook. Post ID: {post_id}")
         db.mark_message_processed(message.id)
 
@@ -115,7 +124,8 @@ async def handle_single_photo(message: Message):
 
     finally:
         try:
-            os.remove(path)
+            if path:
+                os.remove(path)
         except OSError:
             pass
 
