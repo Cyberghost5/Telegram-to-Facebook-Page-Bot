@@ -1,0 +1,33 @@
+# Environment variables (Sensitive tokens)
+.env
+
+# Python caching
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Application data & databases
+truck_forwarder.db
+*.db
+truck_forwarder_session.session
+*.session
+
+# Logs
+truck_forwarder.log
+*.log
+
+# Temp/download files
+downloads/
+
+# IDE configurations
+.vscode/
+.idea/
+.project
+.pydevproject
+.settings/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
