@@ -1,6 +1,7 @@
 import logging
 import anthropic
 from config import ANTHROPIC_API_KEY, WHATSAPP_NUMBER, TELEGRAM_USERNAME
+from utils import retry
 
 logger = logging.getLogger(__name__)
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -23,6 +24,7 @@ Rules:
 """.strip()
 
 
+@retry(max_retries=3, initial_delay=2.0)
 def compose_facebook_post(raw_caption: str) -> str:
     """
     Sends the raw Telegram caption to Claude and returns
