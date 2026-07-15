@@ -34,7 +34,7 @@ def compose_facebook_post(raw_caption: str) -> str:
         body = "🚛 Truck available for sale. Contact us for full details."
     else:
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-6",
             max_tokens=1024,
             system=SYSTEM_PROMPT,
             messages=[
