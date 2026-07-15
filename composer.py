@@ -57,8 +57,8 @@ def compose_facebook_post(raw_caption: str) -> str:
 
     contact_block = (
         "\n\n📞 Reach out to us to get this truck or learn more:\n"
-        f"  • WhatsApp: https://wa.me/{clean_wa}\n"
-        f"  • Telegram: https://t.me/{clean_tg}"
+        f"  • WhatsApp: {WHATSAPP_NUMBER} (https://wa.me/{clean_wa})\n"
+        f"  • Telegram: {TELEGRAM_USERNAME} (https://t.me/{clean_tg})"
     )
 
     full_post = body + contact_block
