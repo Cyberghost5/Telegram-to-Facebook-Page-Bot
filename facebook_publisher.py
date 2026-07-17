@@ -2,13 +2,11 @@ import json
 import logging
 import requests
 from config import FB_PAGE_ACCESS_TOKEN, FB_PAGE_ID
-from utils import retry
 
 logger = logging.getLogger(__name__)
 GRAPH_BASE = "https://graph.facebook.com/v19.0"
 
 
-@retry(max_retries=3, initial_delay=2.0)
 def _upload_photo_unpublished(image_path: str) -> str:
     """
     Upload a single image to the Facebook page as an unpublished photo.
@@ -33,7 +31,6 @@ def _upload_photo_unpublished(image_path: str) -> str:
     return photo_id
 
 
-@retry(max_retries=3, initial_delay=2.0)
 def _publish_single_photo(image_path: str, message: str) -> str:
     """
     Publish a single photo directly to the page feed in one step.
@@ -55,29 +52,6 @@ def _publish_single_photo(image_path: str, message: str) -> str:
         logger.error(f"Photo publish failed {response.status_code}: {response.text}")
     response.raise_for_status()
     post_id = response.json()["post_id"]
-    logger.info(f"Facebook post published! Post ID: {post_id}")
-    return post_id
-
-
-@retry(max_retries=3, initial_delay=2.0)
-def _publish_feed_post(attached_media: list[dict], message: str) -> str:
-    """
-    Publish a feed post referencing all photo IDs.
-    """
-    url = f"{GRAPH_BASE}/{FB_PAGE_ID}/feed"
-    response = requests.post(
-        url,
-        data={
-            "message": message,
-            "attached_media": json.dumps(attached_media),
-            "access_token": FB_PAGE_ACCESS_TOKEN,
-        },
-        timeout=30,
-    )
-    if not response.ok:
-        logger.error(f"Feed post failed {response.status_code}: {response.text}")
-    response.raise_for_status()
-    post_id = response.json()["id"]
     logger.info(f"Facebook post published! Post ID: {post_id}")
     return post_id
 
@@ -109,4 +83,20 @@ def publish_post(image_paths: list[str], message: str) -> str:
 
     # Multi-photo: Step 2 — publish a feed post referencing all photo IDs
     attached_media = [{"media_fbid": pid} for pid in photo_ids]
-    return _publish_feed_post(attached_media, message)
+    url = f"{GRAPH_BASE}/{FB_PAGE_ID}/feed"
+
+    response = requests.post(
+        url,
+        data={
+            "message": message,
+            "attached_media": json.dumps(attached_media),
+            "access_token": FB_PAGE_ACCESS_TOKEN,
+        },
+        timeout=30,
+    )
+    if not response.ok:
+        logger.error(f"Feed post failed {response.status_code}: {response.text}")
+    response.raise_for_status()
+    post_id = response.json()["id"]
+    logger.info(f"Facebook post published! Post ID: {post_id}")
+    return post_id
