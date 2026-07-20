@@ -2,13 +2,13 @@ import os
 import asyncio
 import logging
 from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram.types import Message, InputMediaPhoto
 
 import database as db
 from media_buffer import add_to_group
 from composer import compose_facebook_post
 from facebook_publisher import publish_post
-from config import TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_CHANNEL
+from config import TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_CHANNEL, TARGET_TELEGRAM_CHANNEL
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,17 @@ async def handle_group(messages: list[Message]):
         post_id = await asyncio.to_thread(publish_post, image_paths, post_text)
         logger.info(f"Successfully published to Facebook. Post ID: {post_id}")
 
+        # Optional: Forward the AI-rewritten post to target Telegram channel
+        if TARGET_TELEGRAM_CHANNEL:
+            try:
+                media = [InputMediaPhoto(path) for path in image_paths]
+                if media:
+                    media[0].caption = post_text
+                await app.send_media_group(chat_id=TARGET_TELEGRAM_CHANNEL, media=media)
+                logger.info(f"Successfully posted media group to target Telegram channel: {TARGET_TELEGRAM_CHANNEL}")
+            except Exception as tg_err:
+                logger.error(f"Failed to post media group to target Telegram channel: {tg_err}")
+
         # Mark as processed to prevent duplicates
         db.mark_group_processed(gid)
 
@@ -117,6 +128,15 @@ async def handle_single_photo(message: Message):
         # Publish to Facebook (offloaded to thread to avoid blocking event loop)
         post_id = await asyncio.to_thread(publish_post, [path], post_text)
         logger.info(f"Successfully published to Facebook. Post ID: {post_id}")
+
+        # Optional: Forward the AI-rewritten post to target Telegram channel
+        if TARGET_TELEGRAM_CHANNEL:
+            try:
+                await app.send_photo(chat_id=TARGET_TELEGRAM_CHANNEL, photo=path, caption=post_text)
+                logger.info(f"Successfully posted single photo to target Telegram channel: {TARGET_TELEGRAM_CHANNEL}")
+            except Exception as tg_err:
+                logger.error(f"Failed to post single photo to target Telegram channel: {tg_err}")
+
         db.mark_message_processed(message.id)
 
     except Exception as e:

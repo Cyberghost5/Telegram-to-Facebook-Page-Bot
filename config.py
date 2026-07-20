@@ -12,11 +12,22 @@ def _require(key: str) -> str:
 # Telegram
 TELEGRAM_API_ID       = int(_require("TELEGRAM_API_ID"))
 TELEGRAM_API_HASH     = _require("TELEGRAM_API_HASH")
+
 raw_channel           = _require("TELEGRAM_CHANNEL")
 try:
     TELEGRAM_CHANNEL  = int(raw_channel)
 except ValueError:
     TELEGRAM_CHANNEL  = raw_channel
+
+raw_target_channel    = os.getenv("TARGET_TELEGRAM_CHANNEL")
+if raw_target_channel:
+    try:
+        TARGET_TELEGRAM_CHANNEL = int(raw_target_channel)
+    except ValueError:
+        TARGET_TELEGRAM_CHANNEL = raw_target_channel
+else:
+    TARGET_TELEGRAM_CHANNEL = None
+
 
 
 # Anthropic
