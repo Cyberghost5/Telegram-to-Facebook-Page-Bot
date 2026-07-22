@@ -34,6 +34,31 @@ def _upload_photo_unpublished(image_path: str) -> str:
 
 
 @retry(max_retries=3, initial_delay=2.0)
+def _upload_video_unpublished(video_path: str) -> str:
+    """
+    Upload a single video to the Facebook page as an unpublished video.
+    Returns the Facebook video ID.
+    """
+    url = f"{GRAPH_BASE}/{FB_PAGE_ID}/videos"
+    with open(video_path, "rb") as f:
+        response = requests.post(
+            url,
+            data={
+                "published": "false",
+                "access_token": FB_PAGE_ACCESS_TOKEN,
+            },
+            files={"source": f},
+            timeout=120,
+        )
+    if not response.ok:
+        logger.error(f"Video upload failed {response.status_code}: {response.text}")
+    response.raise_for_status()
+    video_id = response.json()["id"]
+    logger.info(f"Uploaded video → FB ID: {video_id}")
+    return video_id
+
+
+@retry(max_retries=3, initial_delay=2.0)
 def _publish_single_photo(image_path: str, message: str) -> str:
     """
     Publish a single photo directly to the page feed in one step.
@@ -60,9 +85,35 @@ def _publish_single_photo(image_path: str, message: str) -> str:
 
 
 @retry(max_retries=3, initial_delay=2.0)
+def _publish_single_video(video_path: str, message: str) -> str:
+    """
+    Publish a single video directly to the page feed in one step.
+    Returns the Facebook post ID.
+    """
+    url = f"{GRAPH_BASE}/{FB_PAGE_ID}/videos"
+    with open(video_path, "rb") as f:
+        response = requests.post(
+            url,
+            data={
+                "description": message,
+                "published": "true",
+                "access_token": FB_PAGE_ACCESS_TOKEN,
+            },
+            files={"source": f},
+            timeout=120,
+        )
+    if not response.ok:
+        logger.error(f"Video publish failed {response.status_code}: {response.text}")
+    response.raise_for_status()
+    post_id = response.json()["id"]
+    logger.info(f"Facebook video post published! Post ID: {post_id}")
+    return post_id
+
+
+@retry(max_retries=3, initial_delay=2.0)
 def _publish_feed_post(attached_media: list[dict], message: str) -> str:
     """
-    Publish a feed post referencing all photo IDs.
+    Publish a feed post referencing all media IDs (photos and/or videos).
     """
     url = f"{GRAPH_BASE}/{FB_PAGE_ID}/feed"
     response = requests.post(
@@ -82,31 +133,46 @@ def _publish_feed_post(attached_media: list[dict], message: str) -> str:
     return post_id
 
 
-def publish_post(image_paths: list[str], message: str) -> str:
+def publish_post(media_items: list, message: str) -> str:
     """
-    Publish images to the Facebook page feed with the given message.
-    Single photo: direct one-step publish via /photos.
-    Multiple photos: upload as unpublished then create a combined feed post.
+    Publish media items (photos/videos) to the Facebook page feed with the given message.
+    'media_items' can be a list of file paths (strings) or list of tuples: (path, media_type).
+    Single media: direct publish via /photos or /videos.
+    Multiple media: upload as unpublished then create a combined feed post.
     Returns the new Facebook post ID.
     """
-    if not image_paths:
-        raise ValueError("No images provided for Facebook post.")
+    if not media_items:
+        raise ValueError("No media provided for Facebook post.")
 
-    if len(image_paths) == 1:
-        return _publish_single_photo(image_paths[0], message)
+    # Normalize items to (path, media_type)
+    normalized = []
+    for item in media_items:
+        if isinstance(item, tuple):
+            normalized.append(item)
+        else:
+            normalized.append((str(item), "photo"))
 
-    # Multi-photo: Step 1 — upload all photos as unpublished
-    photo_ids = []
-    for path in image_paths:
+    if len(normalized) == 1:
+        path, m_type = normalized[0]
+        if m_type == "video":
+            return _publish_single_video(path, message)
+        return _publish_single_photo(path, message)
+
+    # Multi-media: Step 1 — upload all items as unpublished
+    media_ids = []
+    for path, m_type in normalized:
         try:
-            pid = _upload_photo_unpublished(path)
-            photo_ids.append(pid)
+            if m_type == "video":
+                pid = _upload_video_unpublished(path)
+            else:
+                pid = _upload_photo_unpublished(path)
+            media_ids.append(pid)
         except Exception as e:
-            logger.error(f"Failed to upload {path}: {e}")
+            logger.error(f"Failed to upload {m_type} {path}: {e}")
 
-    if not photo_ids:
-        raise RuntimeError("All photo uploads failed — aborting post.")
+    if not media_ids:
+        raise RuntimeError("All media uploads failed — aborting post.")
 
-    # Multi-photo: Step 2 — publish a feed post referencing all photo IDs
-    attached_media = [{"media_fbid": pid} for pid in photo_ids]
+    # Multi-photo/video: Step 2 — publish a feed post referencing all media IDs
+    attached_media = [{"media_fbid": pid} for pid in media_ids]
     return _publish_feed_post(attached_media, message)
