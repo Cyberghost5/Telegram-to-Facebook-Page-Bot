@@ -20,6 +20,9 @@ Rules:
 - Do NOT apply text syling such as bold or italics.
 - Do NOT include emojis.
 - If price is not mentioned in the original caption, Pick a reasonable price according to the truck specs.
+- The truck price must be in USD.
+- Add a down payment text, the down payment amount should be 50 percent (50%) of the truck price.
+- Add monthly installment text, the monthly installment should be 12 equal payments on the remaining amount (50% of the truck price).
 - Always change the brand name to "Truck Sales USA" if you see any other brand name.
 - Do NOT include any contact information — that will be appended separately.
 - End your composed post ONLY with the truck details and a single blank line.
