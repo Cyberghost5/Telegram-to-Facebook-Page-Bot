@@ -8,7 +8,15 @@ import database as db
 from media_buffer import add_to_group
 from composer import compose_facebook_post
 from facebook_publisher import publish_post
-from config import TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_CHANNEL, TARGET_TELEGRAM_CHANNEL
+from instagram_publisher import publish_instagram_post
+from config import (
+    TELEGRAM_API_ID,
+    TELEGRAM_API_HASH,
+    TELEGRAM_CHANNEL,
+    TARGET_TELEGRAM_CHANNEL,
+    INSTAGRAM_ACCOUNT_ID,
+    PUBLIC_BASE_URL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +95,14 @@ async def handle_group(messages: list[Message]):
             except Exception as tg_err:
                 logger.error(f"Failed to post media group to target Telegram channel: {tg_err}")
 
+        # Optional: Publish to Instagram
+        if INSTAGRAM_ACCOUNT_ID and PUBLIC_BASE_URL:
+            try:
+                ig_id = await asyncio.to_thread(publish_instagram_post, media_items, post_text)
+                logger.info(f"Successfully published to Instagram. Post ID: {ig_id}")
+            except Exception as ig_err:
+                logger.error(f"Failed to publish to Instagram: {ig_err}")
+
         # Mark as processed to prevent duplicates
         db.mark_group_processed(gid)
 
@@ -147,6 +163,14 @@ async def handle_single_media(message: Message):
                 logger.info(f"Successfully posted single {m_type} to target Telegram channel: {TARGET_TELEGRAM_CHANNEL}")
             except Exception as tg_err:
                 logger.error(f"Failed to post single {m_type} to target Telegram channel: {tg_err}")
+
+        # Optional: Publish to Instagram
+        if INSTAGRAM_ACCOUNT_ID and PUBLIC_BASE_URL:
+            try:
+                ig_id = await asyncio.to_thread(publish_instagram_post, [(path, m_type)], post_text)
+                logger.info(f"Successfully published to Instagram. Post ID: {ig_id}")
+            except Exception as ig_err:
+                logger.error(f"Failed to publish to Instagram: {ig_err}")
 
         db.mark_message_processed(message.id)
 

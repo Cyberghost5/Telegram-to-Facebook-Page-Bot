@@ -37,6 +37,10 @@ ANTHROPIC_API_KEY     = _require("ANTHROPIC_API_KEY")
 FB_PAGE_ACCESS_TOKEN  = _require("FACEBOOK_PAGE_ACCESS_TOKEN")
 FB_PAGE_ID            = _require("FACEBOOK_PAGE_ID")
 
+# Instagram (Optional)
+INSTAGRAM_ACCOUNT_ID  = os.getenv("INSTAGRAM_ACCOUNT_ID")
+PUBLIC_BASE_URL       = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
+
 # Contact details
 WHATSAPP_NUMBER       = _require("WHATSAPP_NUMBER")
 TELEGRAM_USERNAME     = _require("TELEGRAM_USERNAME")
