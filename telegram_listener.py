@@ -55,9 +55,10 @@ async def handle_group(messages: list[Message]):
     media_items = []  # List of tuples: (path, media_type)
     for msg in messages:
         m_type = "video" if msg.video else "photo"
+        ext = ".mp4" if msg.video else ".jpg"
         try:
             path = await msg.download(
-                file_name=f"{DOWNLOADS_DIR}/{gid}_{msg.id}"
+                file_name=f"{DOWNLOADS_DIR}/{gid}_{msg.id}{ext}"
             )
             if path:
                 media_items.append((path, m_type))
@@ -134,9 +135,10 @@ async def handle_single_media(message: Message):
     )
 
     path = None
+    ext = ".mp4" if message.video else ".jpg"
     try:
         path = await message.download(
-            file_name=f"{DOWNLOADS_DIR}/{message.id}"
+            file_name=f"{DOWNLOADS_DIR}/{message.id}{ext}"
         )
         if not path:
             logger.error(f"Failed to download {m_type} from message {message.id}: download returned None")
