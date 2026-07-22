@@ -19,6 +19,7 @@ Rules:
 - Do NOT invent specs that are not in the original text.
 - Do NOT apply text syling such as bold or italics.
 - Do NOT include emojis.
+- If price is not mentioned in the original caption, Pick a reasonable price according to the truck specs.
 - Always change the brand name to "Truck Sales USA" if you see any other brand name.
 - Do NOT include any contact information — that will be appended separately.
 - End your composed post ONLY with the truck details and a single blank line.
